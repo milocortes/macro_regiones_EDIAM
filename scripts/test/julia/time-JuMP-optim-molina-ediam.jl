@@ -1,19 +1,17 @@
-using Turing
 using DifferentialEquations
 using Plots,StatsPlots
-using Optim
+using JuMP
+using Ipopt
 
 function molina_ediam(du,u,p,t)
     ## Parámetros iniciales
-    ε,α,size_factor,γ_re,k_re,γ_ce,k_ce,η_re,η_ce,ν_re,ν_ce,qsi,δ_S,Δ_T_Disaster,β_T,CO2_base,CO2_Disaster,labor_growth_N,labor_growth_S,ρ,λ,σ,index_vector,ce_tax_N,ce_tax_S,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S = p
+    ε,α,size_factor,γ_re,k_re,γ_ce,k_ce,η_re,η_ce,ν_re,ν_ce,qsi,δ_S,Δ_T_Disaster,β_T,CO2_base,CO2_Disaster,labor_growth_N,labor_growth_S,ρ,λ,σ,ce_tax_N,ce_tax_S,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S = p
 
     #=
     Derivada con respecto al tiempo del vector de estado.
         * u es el vector de estado (arreglo)
     =#
     time =  t
-
-    index = findall(x -> x == time,index_vector)
 
     Are_N,Ace_N,Are_S,Ace_S,S = u
 
@@ -213,17 +211,11 @@ u0= [Are_N_0, Ace_N_0, Are_S_0,Ace_S_0,S_0]
 
 # Save parameters in an array
 dt = 5    # 1 Quarterly
-D = 100.0 # Simulate for 30 years
-N_t = Int(D/dt) # Corresponding no of time steps
-index_vector = collect(0:dt:D)
+D = 120.0 # Simulate for 30 years
+tspan = (0.0,D)
+t = 0.0:dt:D;
 
-ce_tax_N_int = zeros(length(index_vector))
-ce_tax_S_int = zeros(length(index_vector))
-
-# Definimos el modelo de Turing
-@model max_molina_ediam(OBJ) =
-begin
-
+function optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,t_ini,t_end)
     # Define array for the non-state variables
     global N_fossil_energy = []
     global S_fossil_energy = []
@@ -232,84 +224,125 @@ begin
     global r_Consumption_S = []
     global r_Delta_Temp = []
     global tiempo_line = []
-    # Priors
-    σ₂ ~ Truncated(Normal(0, 1), 0, Inf)
-    ce_tax_S ~ Truncated(Normal(0.2,√σ₂ ),0.1, 0.5)
-    ce_tax_N ~ Truncated(Normal(0.6,√σ₂ ),0.3, 0.7)
-    Tec_subsidy_N ~ Truncated(Normal(0.2,√σ₂ ),0.1, 0.9)
-    RD_subsidy_N ~ Truncated(Normal(0.8,√σ₂ ),0.1, 1.9)
-    Tec_subsidy_S ~ Truncated(Normal(0.2,√σ₂ ),0.1, 0.9)
-    RD_subsidy_S ~ Truncated(Normal(0.8,√σ₂ ),0.1, 1.9)
 
+    lockdown_times = [Int(floor(t_ini))*5,Int(ceil(t_end))*5]
+    println(lockdown_times)
+    condition(u,t,integrator) = t ∈ lockdown_times
+    function affect!(integrator)
+        if integrator.t < lockdown_times[2]
+            println("No modificamos")
+            integrator.p[23] = ce_tax_N
+            integrator.p[24] = ce_tax_S
+            integrator.p[25] = Tec_subsidy_N
+            integrator.p[26] = RD_subsidy_N
+            integrator.p[27] = Tec_subsidy_S
+            integrator.p[28] =RD_subsidy_S
+        else
+            integrator.p[23] = 0.0
+            integrator.p[24] = 0.0
+            integrator.p[25] = 0.0
+            integrator.p[26] = 0.0
+            integrator.p[27] = 0.0
+            integrator.p[28] = 0.0
+        end
+    end
 
-    p = [ε ,α ,size_factor,γ_re ,k_re,γ_ce ,k_ce,η_re,η_ce,ν_re ,ν_ce,qsi ,δ_S ,Δ_T_Disaster,β_T ,CO2_base ,CO2_Disaster,labor_growth_N ,labor_growth_S,ρ,λ,σ,
-        index_vector,ce_tax_N,ce_tax_S,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S]
+    cb = PresetTimeCallback(lockdown_times, affect!);
 
+    p = [ε ,α ,size_factor,γ_re ,k_re,γ_ce ,k_ce,η_re,η_ce,ν_re ,ν_ce,qsi ,δ_S ,Δ_T_Disaster,β_T ,CO2_base ,CO2_Disaster,labor_growth_N ,labor_growth_S,ρ,λ,σ,ce_tax_N,ce_tax_S,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S]
     # Solve the ODE system
-    prob1 = ODEProblem(molina_ediam,u0,(0.0,D),p)
-    global sol = solve(prob1,Euler(),dt=dt)
+    prob1 = ODEProblem(molina_ediam,u0,tspan,p)
+    global sol = DifferentialEquations.solve(prob1,Euler(),dt=dt, callback = cb)
+    #global sol = DifferentialEquations.solve(prob1,Euler(),dt=dt)
 
-    # Use simulation output to estimate value of objective function
-    utility_consumer_N = 1 .+ ((r_Cost_S_Damage .* r_Consumption_N).^(1-σ) / (1- σ)) .* (1 ./ ((1+ ρ).^(sol.t)))
-    utility_consumer_S = 1 .+ ((r_Cost_S_Damage .* r_Consumption_S).^(1-σ) / (1- σ)) .* (1 ./ ((1+ ρ).^(sol.t)))
+    if  0 in r_Cost_S_Damage
+        total_utility = -1000.0
+    else
+        # Use simulation output to estimate value of objective function
+        utility_consumer_N = 1 .+ ((r_Cost_S_Damage .* r_Consumption_N).^(1-σ) / (1- σ)) .* (1 ./ ((1+ ρ).^(sol.t)))
+        utility_consumer_S = 1 .+ ((r_Cost_S_Damage .* r_Consumption_S).^(1-σ) / (1- σ)) .* (1 ./ ((1+ ρ).^(sol.t)))
 
-    TOTAL_UTILITY = sum(utility_consumer_N) +sum(utility_consumer_S)
-    # Likelihood
-    OBJ ~ Truncated(Normal(TOTAL_UTILITY, 10),1,Inf)
+        total_utility = sum(utility_consumer_N) +sum(utility_consumer_S)
+    end
+    println(total_utility)
 
-end;
-
-# I use optim for the maximum Likelihood estimation
-model_optim = max_molina_ediam(30)
-mle_estimate = optimize(model_optim,MLE(), NelderMead(), Optim.Options(iterations=10_000, allow_f_increases=true))
-#=
-obj_max = 0
-mle_estimate = 0
-while obj_max < 100
-    #mle_estimate = optimize(model_optim,MAP(), NelderMead())
-    mle_estimate = optimize(model_optim,MLE(), NelderMead(), Optim.Options(iterations=10_000, allow_f_increases=true))
-    obj_max = mle_estimate.values[:OBJ]
-end
-=#
-
-mc_optim = sample(model_optim, SMC(), MCMCThreads(), 1000, 8,init_theta = mle_estimate.values.array)
-#mc_optim = sample(model_optim, Prior(), 1_000, init_theta = mle_estimate.values.array)
-#mc_optim = sample(model_optim, IS(), MCMCThreads(), 1_000, 4,init_theta = mle_estimate.values.array)
-
-plot(mc_optim)
-
- prob" OBJ = 40. , ce_tax_S =0.2955| model = model_optim,σ₂=0.4"
- # Greficamos el incremento de la temperatura
-plot([2012+i for i in tiempo_line],r_Delta_Temp,
- title = "Incremento de la temperatura",
-  lw = 3)
-
-
-global tmt_agrega = []
-
-for i in 1:30
-    println(i)
-    mc_optim = sample(model_optim, SMC(), MCMCThreads(), 100, 8,init_theta = mle_estimate.values.array)
-    #mle_estimate = optimize(model_optim,MLE(), NelderMead(), Optim.Options(iterations=10_000, allow_f_increases=true))
-    #mle_estimate = optimize(model_optim,MLE(), NelderMead(), Optim.Options(iterations=10_000, allow_f_increases=true))
-
-    push!(tmt_agrega,r_Delta_Temp)
+    return total_utility
 end
 
-med_b = mean(hcat(tmt_agrega))
-min_b = minimum(hcat(tmt_agrega))
-max_b = maximum(hcat(tmt_agrega))
-lower_bound = mean(hcat(tmt_agrega)) .- 1.97 .* std(hcat(tmt_agrega))
-upper_bound = mean(hcat(tmt_agrega)) .+ 1.97 .* std(hcat(tmt_agrega))
 
-scatter(([2012+i for i in tiempo_line], med_b),
-		yerror=(med_b-min_b,
-				max_b-med_b))
+model = Model(Ipopt.Optimizer)
+@variable(model,0.1 <= ce_tax_N <= 0.9)
+@variable(model,0.1 <= ce_tax_S <= 0.9)
+@variable(model,0.1 <= Tec_subsidy_N <= 0.9)
+@variable(model,0.1 <= Tec_subsidy_S <= 0.9)
+@variable(model,0.1 <= RD_subsidy_N <= 2.0)
+@variable(model,0.1 <= RD_subsidy_S <= 2.0)
+@variable(model,0.0 <= t_end <= D)
+@variable(model,0.0 <= t_init  <= D)
+#@NLconstraint(model, 0.1 <= ce_tax_N <= 0.9)
+#@NLconstraint(model, 0.1 <= ce_tax_S <= 0.9)
+#@NLconstraint(model, 0.1 <= Tec_subsidy_N <= 0.9)
+#@NLconstraint(model, 0.1 <= Tec_subsidy_S <= 0.9)
+#@NLconstraint(model, 0.1 <= RD_subsidy_N <= 2.0)
+#@NLconstraint(model, 0.1 <= RD_subsidy_S <= 2.0)
+#@NLconstraint(model, 0.0 <=  t_init <=  D)
+#@NLconstraint(model, 61.0 <=  t_end <=  D)
+@NLconstraint(model, t_init <= t_end)
+@NLconstraint(model, t_end <= D)
+register(model, :optim_welfare, 8, optim_welfare, autodiff=true)
+@NLobjective(model, Max, optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,t_init,t_end))
+#set_optimizer(model, Ipopt.Optimizer,max_iter = 5000)
+#set_optimizer(model, Ipopt.Optimizer,max_iter = 5000)
+set_optimizer_attribute(model, "max_iter", 5000)
+set_optimizer_attribute(model, "tol", 1e-10)
+optimize!(model)
+
+solution_summary(model, verbose=true)
 
 
-#=
-REFERENCIAS
 
-https://discourse.julialang.org/t/solving-an-optimal-control-problem-with-jump/36570
-https://docs.juliahub.com/DiffEqFlux/BdO4p/1.10.3/examples/LV-ODE/
-=#
+# Define array for the non-state variables
+global N_fossil_energy = []
+global S_fossil_energy = []
+global r_Cost_S_Damage = []
+global r_Consumption_N = []
+global r_Consumption_S = []
+global r_Delta_Temp = []
+global tiempo_line = []
+
+lockdown_times = [40.0,110.0]
+RD_subsidy_N = 0.1
+RD_subsidy_S =  1.5888268387687938
+Tec_subsidy_N = 0.6059830261664333
+Tec_subsidy_S = 0.10902333247467821
+ce_tax_N = 0.1
+ce_tax_S = 0.1
+
+
+condition(u,t,integrator) = t ∈ lockdown_times
+function affect!(integrator)
+    if integrator.t < lockdown_times[2]
+        println("MODIFICAMOS")
+        integrator.p[23] = ce_tax_N
+        integrator.p[24] = ce_tax_S
+        integrator.p[25] = Tec_subsidy_N
+        integrator.p[26] = RD_subsidy_N
+        integrator.p[27] = Tec_subsidy_S
+        integrator.p[28] =RD_subsidy_S
+    else
+        integrator.p[23] = 0.0
+        integrator.p[24] = 0.0
+        integrator.p[25] = 0.0
+        integrator.p[26] = 0.0
+        integrator.p[27] = 0.0
+        integrator.p[28] = 0.0
+    end
+end
+
+
+cb = PresetTimeCallback(lockdown_times, affect!);
+
+p = [ε ,α ,size_factor,γ_re ,k_re,γ_ce ,k_ce,η_re,η_ce,ν_re ,ν_ce,qsi ,δ_S ,Δ_T_Disaster,β_T ,CO2_base ,CO2_Disaster,labor_growth_N ,labor_growth_S,ρ,λ,σ,ce_tax_N,ce_tax_S,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S]
+# Solve the ODE system
+prob1 = ODEProblem(molina_ediam,u0,tspan,p)
+global sol = DifferentialEquations.solve(prob1,Euler(),dt=dt, callback = cb)

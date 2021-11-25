@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+from scipy.integrate import odeint
 
 def ode_FE(f, U_0, dt, T):
     N_t = int(round(T/dt))

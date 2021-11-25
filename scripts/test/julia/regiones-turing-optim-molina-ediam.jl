@@ -17,9 +17,6 @@ function molina_ediam(du,u,p,t)
 
     Are_N,Ace_N,Are_S,Ace_S,S = u
 
-    Are_N_0 = 163.31730041748838
-    Ace_N_0 = 245.3275202070854
-
     ### Auxiliares generales
 
     φ= (1-α)*(1-ε)
@@ -174,12 +171,7 @@ k_ce = 0
 η_ce= 0.02
 ν_re = 0.02
 ν_ce= 0.02
-qsi = 0.010054
-δ_S = 0.001823
 Δ_T_Disaster= 6
-β_T = 4.997053
-CO2_base = 289.415046
-CO2_Disaster= 1298.216153
 labor_growth_N = 0.000
 labor_growth_S = 0.000
 ρ = 0.015
@@ -187,22 +179,22 @@ labor_growth_S = 0.000
 σ = 2
 
 
+### Parametros. Global
+β_T,CO2_base,CO2_Disaster,qsi,δ_S ,S_0,Yre_N_0,Yce_N_0 ,Yre_S_0,Yce_S_0  = [3.189799 293.071388 3076.849744 0.010023 0.000630 2695.295397 45.55074 193.2 27.82166 257.5463]
 
-## Y renewable energy, advanced economies
-Yre_N_0 = 45.55074
-## Y carbon energy, advanced economies
-Yce_N_0 = 193.2
-## Y renewable energy, emerging economies
-Yre_S_0 = 27.82166
-## Y carbon energy, emerging economies
-Yce_S_0 = 257.5463
-### Environment quality
-S_0 = 915.970085
+### Parámetros. América
+β_T,CO2_base,CO2_Disaster,qsi,δ_S ,S_0,Yre_N_0,Yce_N_0 ,Yre_S_0,Yce_S_0  = [3.036452 381.373907	4508.719793	0.065601 0.000904 3729.604678 8.82351 68.43374 7.79899 17.77395]
+
+### Parámetros. Asia
+β_T,CO2_base,CO2_Disaster,qsi,δ_S ,S_0,Yre_N_0,Yce_N_0 ,Yre_S_0,Yce_S_0  = [3.534413 381.083179	3181.189645	0.050550 0.001453 2397.961216 10.71390 39.9564 5.54137 83.70293 ]
+
+### Parámetros. Eurafrica
+β_T,CO2_base,CO2_Disaster,qsi,δ_S ,S_0,Yre_N_0,Yce_N_0 ,Yre_S_0,Yce_S_0  = [3.321932 381.243179	3645.176450	0.060625 0.001153 2867.159415 8.46526 61.65342 3.71644 23.2247]
 
 #Initial Productivity conditions are determined by the initial levels of production of energy
 #In the Northern Region
-Ace_N_0 = ((Yce_N_0^((ε-1)/ε)+Yre_N_0^((ε-1)/ε))^(ε/(ε-1)))*(1+(Yce_N_0/Yre_N_0)^((1-ε)/ε))^(1/((1-α)*(1-ε)))
-Are_N_0 = ((Yce_N_0^((ε-1)/ε)+Yre_N_0^((ε-1)/ε))^(ε/(ε-1)))*(1+(Yre_N_0/Yce_N_0)^((1-ε)/ε))^(1/((1-α)*(1-ε)))
+global Ace_N_0 = ((Yce_N_0^((ε-1)/ε)+Yre_N_0^((ε-1)/ε))^(ε/(ε-1)))*(1+(Yce_N_0/Yre_N_0)^((1-ε)/ε))^(1/((1-α)*(1-ε)))
+global Are_N_0 = ((Yce_N_0^((ε-1)/ε)+Yre_N_0^((ε-1)/ε))^(ε/(ε-1)))*(1+(Yre_N_0/Yce_N_0)^((1-ε)/ε))^(1/((1-α)*(1-ε)))
 
 #In the Southern Region
 Ace_S_0 = (1/size_factor)*((Yce_S_0^((ε-1)/ε)+Yre_S_0^((ε-1)/ε))^(ε/(ε-1)))*(1+(Yce_S_0/Yre_S_0)^((1-ε)/ε))^(1/((1-α)*(1-ε)))
@@ -213,7 +205,7 @@ u0= [Are_N_0, Ace_N_0, Are_S_0,Ace_S_0,S_0]
 
 # Save parameters in an array
 dt = 5    # 1 Quarterly
-D = 100.0 # Simulate for 30 years
+D = 120.0 # Simulate for 30 years
 N_t = Int(D/dt) # Corresponding no of time steps
 index_vector = collect(0:dt:D)
 
@@ -278,7 +270,7 @@ mc_optim = sample(model_optim, SMC(), MCMCThreads(), 1000, 8,init_theta = mle_es
 
 plot(mc_optim)
 
- prob" OBJ = 40. , ce_tax_S =0.2955| model = model_optim,σ₂=0.4"
+prob" OBJ = 40. , ce_tax_S =0.2955| model = model_optim,σ₂=0.4"
  # Greficamos el incremento de la temperatura
 plot([2012+i for i in tiempo_line],r_Delta_Temp,
  title = "Incremento de la temperatura",
@@ -304,9 +296,9 @@ upper_bound = mean(hcat(tmt_agrega)) .+ 1.97 .* std(hcat(tmt_agrega))
 
 scatter(([2012+i for i in tiempo_line], med_b),
 		yerror=(med_b-min_b,
-				max_b-med_b))
+				max_b-med_b),title = "Incremento de la temperatura. Región:Global")
 
-
+savefig("global_GFDL-ESM2G.png")
 #=
 REFERENCIAS
 

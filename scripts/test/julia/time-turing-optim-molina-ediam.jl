@@ -5,7 +5,7 @@ using Optim
 
 function molina_ediam(du,u,p,t)
     ## Parámetros iniciales
-    ε,α,size_factor,γ_re,k_re,γ_ce,k_ce,η_re,η_ce,ν_re,ν_ce,qsi,δ_S,Δ_T_Disaster,β_T,CO2_base,CO2_Disaster,labor_growth_N,labor_growth_S,ρ,λ,σ,index_vector,ce_tax_N,ce_tax_S,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S = p
+    ε,α,size_factor,γ_re,k_re,γ_ce,k_ce,η_re,η_ce,ν_re,ν_ce,qsi,δ_S,Δ_T_Disaster,β_T,CO2_base,CO2_Disaster,labor_growth_N,labor_growth_S,ρ,λ,σ,ce_tax_N,ce_tax_S,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S = p
 
     #=
     Derivada con respecto al tiempo del vector de estado.
@@ -13,7 +13,6 @@ function molina_ediam(du,u,p,t)
     =#
     time =  t
 
-    index = findall(x -> x == time,index_vector)
 
     Are_N,Ace_N,Are_S,Ace_S,S = u
 
@@ -32,13 +31,13 @@ function molina_ediam(du,u,p,t)
     ### North Region
     #Auxiliaries in North
 
-    L_N = Float64(ℯ)^(labor_growth_N*time)
+    L_N = ℯ^(labor_growth_N*time)
 
     #gamma displays decreasing returns as in Stiligtz
-    γ_re_t_N = γ_re*Float64(ℯ)^(-k_re*(Are_N/Are_N_0-1))
+    γ_re_t_N = γ_re*ℯ^(-k_re*(Are_N/Are_N_0-1))
 
     #gamma displays decreasing returns as in Stiligtz
-    γ_ce_t_N = γ_ce*Float64(ℯ)^(-k_ce*(Ace_N/Ace_N_0-1))
+    γ_ce_t_N = γ_ce*ℯ^(-k_ce*(Ace_N/Ace_N_0-1))
 
     ### Carbon tax in advanced region
     #ce_tax_N = ce_tax_N * ce_tax_N_int[index][1]
@@ -74,12 +73,12 @@ function molina_ediam(du,u,p,t)
 
     Y_N = ((Yre_N)^((ε-1)/ε)+(Yce_N)^((ε-1)/ε))^(ε/(ε-1))
 
-    sre_N = Float64(ℯ)^(Profits_re_N)/(Float64(ℯ)^(Profits_ce_N)+Float64(ℯ)^(Profits_re_N))
+    sre_N = ℯ^(Profits_re_N)/(ℯ^(Profits_ce_N)+ℯ^(Profits_re_N))
     sce_N = 1-sre_N
 
     #Auxiliaries in South
     #the population of the South is 4.6 that of the North,
-    L_S = (Float64(ℯ)^(labor_growth_S*time))*size_factor
+    L_S = (ℯ^(labor_growth_S*time))*size_factor
     γ_re_t_S = γ_re
     γ_ce_t_S = γ_ce
 
@@ -116,7 +115,7 @@ function molina_ediam(du,u,p,t)
     Y_S = ((Yre_S)^((ε-1)/ε)+(Yce_S)^((ε-1)/ε))^(ε/(ε-1))
 
     #Allocation of Scientists
-    sre_S = Float64(ℯ)^(Profits_re_S)/(Float64(ℯ)^(Profits_ce_S)+Float64(ℯ)^(Profits_re_S))
+    sre_S = ℯ^(Profits_re_S)/(ℯ^(Profits_ce_S)+ℯ^(Profits_re_S))
     sce_S = 1-sre_S
 
     ##### Changes in Temperature
@@ -213,15 +212,14 @@ u0= [Are_N_0, Ace_N_0, Are_S_0,Ace_S_0,S_0]
 
 # Save parameters in an array
 dt = 5    # 1 Quarterly
-D = 100.0 # Simulate for 30 years
+D = 200.0 # Simulate for 30 years
 N_t = Int(D/dt) # Corresponding no of time steps
 index_vector = collect(0:dt:D)
 
 ce_tax_N_int = zeros(length(index_vector))
 ce_tax_S_int = zeros(length(index_vector))
-
 # Definimos el modelo de Turing
-@model max_molina_ediam(OBJ) =
+@model max_molina_ediam() =
 begin
 
     # Define array for the non-state variables
@@ -241,13 +239,38 @@ begin
     Tec_subsidy_S ~ Truncated(Normal(0.2,√σ₂ ),0.1, 0.9)
     RD_subsidy_S ~ Truncated(Normal(0.8,√σ₂ ),0.1, 1.9)
 
+    t_end ~ DiscreteUniform(5,D)
+    t_init ~ DiscreteUniform(0,Int(floor(t_end)))
+
+
+    lockdown_times = [t_init,t_end]
+
+    println(lockdown_times)
+    condition(u,t,integrator) = t ∈ lockdown_times
+    function affect!(integrator)
+        if integrator.t < lockdown_times[2]
+            println("No ajustamos")
+        else
+            integrator.p[23] = 0.0
+            integrator.p[24] = 0.0
+            integrator.p[25] = 0.0
+            integrator.p[26] = 0.0
+            integrator.p[27] = 0.0
+            integrator.p[28] = 0.0
+        end
+    end
+
+    cb = PresetTimeCallback(lockdown_times, affect!);
+
 
     p = [ε ,α ,size_factor,γ_re ,k_re,γ_ce ,k_ce,η_re,η_ce,ν_re ,ν_ce,qsi ,δ_S ,Δ_T_Disaster,β_T ,CO2_base ,CO2_Disaster,labor_growth_N ,labor_growth_S,ρ,λ,σ,
-        index_vector,ce_tax_N,ce_tax_S,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S]
+    ce_tax_N,ce_tax_S,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S]
 
     # Solve the ODE system
     prob1 = ODEProblem(molina_ediam,u0,(0.0,D),p)
-    global sol = solve(prob1,Euler(),dt=dt)
+
+    global sol = solve(prob1,Euler(),dt=dt, callback = cb)
+    #global sol = solve(prob1,Euler(),dt=dt)
 
     # Use simulation output to estimate value of objective function
     utility_consumer_N = 1 .+ ((r_Cost_S_Damage .* r_Consumption_N).^(1-σ) / (1- σ)) .* (1 ./ ((1+ ρ).^(sol.t)))
@@ -255,14 +278,13 @@ begin
 
     TOTAL_UTILITY = sum(utility_consumer_N) +sum(utility_consumer_S)
     # Likelihood
-    OBJ ~ Truncated(Normal(TOTAL_UTILITY, 10),1,Inf)
+    OBJ ~ Truncated(Normal(TOTAL_UTILITY, 10),40,Inf)
+    println(OBJ)
 
 end;
 
 # I use optim for the maximum Likelihood estimation
-model_optim = max_molina_ediam(30)
-mle_estimate = optimize(model_optim,MLE(), NelderMead(), Optim.Options(iterations=10_000, allow_f_increases=true))
-#=
+model_optim = max_molina_ediam()
 obj_max = 0
 mle_estimate = 0
 while obj_max < 100
@@ -270,16 +292,11 @@ while obj_max < 100
     mle_estimate = optimize(model_optim,MLE(), NelderMead(), Optim.Options(iterations=10_000, allow_f_increases=true))
     obj_max = mle_estimate.values[:OBJ]
 end
-=#
 
-mc_optim = sample(model_optim, SMC(), MCMCThreads(), 1000, 8,init_theta = mle_estimate.values.array)
-#mc_optim = sample(model_optim, Prior(), 1_000, init_theta = mle_estimate.values.array)
-#mc_optim = sample(model_optim, IS(), MCMCThreads(), 1_000, 4,init_theta = mle_estimate.values.array)
-
+mc_optim = sample(model_optim, SMC(), MCMCThreads(), 1000, 4,init_theta = mle_estimate.values.array)
 plot(mc_optim)
 
- prob" OBJ = 40. , ce_tax_S =0.2955| model = model_optim,σ₂=0.4"
- # Greficamos el incremento de la temperatura
+# Greficamos el incremento de la temperatura
 plot([2012+i for i in tiempo_line],r_Delta_Temp,
  title = "Incremento de la temperatura",
   lw = 3)
@@ -289,23 +306,19 @@ global tmt_agrega = []
 
 for i in 1:30
     println(i)
-    mc_optim = sample(model_optim, SMC(), MCMCThreads(), 100, 8,init_theta = mle_estimate.values.array)
-    #mle_estimate = optimize(model_optim,MLE(), NelderMead(), Optim.Options(iterations=10_000, allow_f_increases=true))
-    #mle_estimate = optimize(model_optim,MLE(), NelderMead(), Optim.Options(iterations=10_000, allow_f_increases=true))
-
+    mc_optim = sample(model_optim, SMC(), MCMCThreads(), 1000, 4,init_theta = mle_estimate.values.array)
     push!(tmt_agrega,r_Delta_Temp)
 end
 
 med_b = mean(hcat(tmt_agrega))
 min_b = minimum(hcat(tmt_agrega))
 max_b = maximum(hcat(tmt_agrega))
-lower_bound = mean(hcat(tmt_agrega)) .- 1.97 .* std(hcat(tmt_agrega))
 upper_bound = mean(hcat(tmt_agrega)) .+ 1.97 .* std(hcat(tmt_agrega))
+lower_bound = mean(hcat(tmt_agrega)) .- 1.97 .* std(hcat(tmt_agrega))
 
 scatter(([2012+i for i in tiempo_line], med_b),
 		yerror=(med_b-min_b,
 				max_b-med_b))
-
 
 #=
 REFERENCIAS

@@ -263,6 +263,15 @@ optimize!(model)
 
 solution_summary(model, verbose=true)
 
+RD_subsidy_N = 0.09999999000156125
+RD_subsidy_S = 0.23239766032968812
+Tec_subsidy_N = 0.5535311768763553
+Tec_subsidy_S = 0.22727256151448763
+ce_tax_N = 0.09999999000038089
+ce_tax_S = 0.09999999000039016
+
+optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S)
+
 # Greficamos el incremento de la temperatura
 plot([2012+i for i in sol.t],r_Delta_Temp,
  title = "Incremento de la temperatura",
