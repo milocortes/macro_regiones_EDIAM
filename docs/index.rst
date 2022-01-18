@@ -11,6 +11,7 @@ Welcome to macro-regiones-EDIAM's documentation!
    :caption: Contents:
 
    autodoc
+   economicImpact
 
 
 Indices and tables
