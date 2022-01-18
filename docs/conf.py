@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'macro-regiones-EDIAM'
+project = 'macro_regiones_EDIAM'
 copyright = '2022, Milo'
 author = 'Milo'
 
