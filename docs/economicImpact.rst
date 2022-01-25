@@ -4,6 +4,74 @@ Economic impact model
 Data
 -----------------------------
 * IO Tables
+
+The `Global Input-Output Tables <https://www.cepal.org/en/events/global-input-output-tables-tools-analysis-integration-latin-america-world>`_ is an effort to complete, among other,the multiregional input-output (MRIO) tables in Latin American and Asia Pacific. The institutions that
+contributed to this project were: the Economic Commission for Latin America and the Caribbean (ECLAC), the Economic and Social Commission for Asia and the Pacific (ESCAP) and the Asian Development Bank (ADB).
+
+Specifically we use the I-O table for 2011 that includes 25 sectors and 78 economies plus the Rest of the World. This table contains
+disaggregated data for 18 economies of Latin America and is consistent with the new I-O table by the Asian Development Bank, which considers 38 economic sectors.
+
+The data of 18 Latin America economies is `here <https://public.tableau.com/app/profile/edmundo.molina/viz/I-O_Viz/I-OTablesLAC>`_ .
+
+.. table:: Latin America IO-Data
+
+    +----+--------+---------------------+-----------+
+    |    | Code   | Nation              | IO-Data   |
+    +====+========+=====================+===========+
+    |  0 | ARG    | Argentina           | Yes       |
+    +----+--------+---------------------+-----------+
+    |  1 | BHS    | Bahamas             | No        |
+    +----+--------+---------------------+-----------+
+    |  2 | BRB    | Barbados            | No        |
+    +----+--------+---------------------+-----------+
+    |  3 | BLZ    | Belize              | No        |
+    +----+--------+---------------------+-----------+
+    |  4 | BOL    | Bolivia             | Yes       |
+    +----+--------+---------------------+-----------+
+    |  5 | BRA    | Brazil              | Yes       |
+    +----+--------+---------------------+-----------+
+    |  6 | CHL    | Chile               | Yes       |
+    +----+--------+---------------------+-----------+
+    |  7 | COL    | Colombia            | Yes       |
+    +----+--------+---------------------+-----------+
+    |  8 | CRI    | Costa Rica          | Yes       |
+    +----+--------+---------------------+-----------+
+    |  9 | DOM    | Dominican Republic  | Yes       |
+    +----+--------+---------------------+-----------+
+    | 10 | ECU    | Ecuador             | Yes       |
+    +----+--------+---------------------+-----------+
+    | 11 | SLV    | El Salvador         | Yes       |
+    +----+--------+---------------------+-----------+
+    | 12 | GTM    | Guatemala           | Yes       |
+    +----+--------+---------------------+-----------+
+    | 13 | GUY    | Guyana              | No        |
+    +----+--------+---------------------+-----------+
+    | 14 | HTI    | Haiti               | No        |
+    +----+--------+---------------------+-----------+
+    | 15 | HND    | Honduras            | Yes       |
+    +----+--------+---------------------+-----------+
+    | 16 | JAM    | Jamaica             | No        |
+    +----+--------+---------------------+-----------+
+    | 17 | MEX    | Mexico              | Yes       |
+    +----+--------+---------------------+-----------+
+    | 18 | NIC    | Nicaragua           | Yes       |
+    +----+--------+---------------------+-----------+
+    | 19 | PAN    | Panama              | Yes       |
+    +----+--------+---------------------+-----------+
+    | 20 | PRY    | Paraguay            | Yes       |
+    +----+--------+---------------------+-----------+
+    | 21 | PER    | Peru                | Yes       |
+    +----+--------+---------------------+-----------+
+    | 22 | SUR    | Suriname            | No        |
+    +----+--------+---------------------+-----------+
+    | 23 | TTO    | Trinidad and Tobago | No        |
+    +----+--------+---------------------+-----------+
+    | 24 | URY    | Uruguay             | Yes       |
+    +----+--------+---------------------+-----------+
+    | 25 | VEN    | Venezuela           | Yes       |
+    +----+--------+---------------------+-----------+
+
+
 * Tables 1, 2 and 3 of `Garrett-Peltier, H. (2017) <https://www.sciencedirect.com/science/article/abs/pii/S026499931630709X>`_
 
 .. table:: Weights in `Garrett-Peltier 2011 <https://www.amazon.com/Creating-Clean-Energy-Economy-Investments-Sustainable/dp/3844306455>`_ .
@@ -140,11 +208,11 @@ Data
 
 * Investment tables (Investment shock per sector and per country, per scenario)
 
-Model
+I-O Impact Assessment Model
 -----------------------------
-New Industry: The Final-Demand Approach (Miller y Blair, 2009, cap 13)
+New Industry: The Final-Demand Approach (Miller and Blair, 2009, cap 13)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Consideremos una economía con dos sectores:
+For the sake of simplicity, consider an example economy of two sectors
 
 .. math::
 
@@ -153,21 +221,20 @@ Consideremos una economía con dos sectores:
       a_{21} & a_{22}
    \end{bmatrix}
 
-Pensemos que se incorpora una nueva industria (sector 3). Asumamos que es posible estimar los insumos de los sectores 1 y 2 del valor de la producción del nuevo sector 3; esto es, :math:`a_{13}` y :math:`a_{23}`.
+We assume that a new industry is introduced to the economy (sector 3, as a result of decarbonization). The model is built on the premise that it is possible to estimate the inputs of sectors 1 and 2 and the value of production of the new sector 3; this is, :math:`a_{13}` y :math:`a_{23}`.
 
-Para cuantificar el impacto de la entrada del sector 3 en la economía, debemos tener alguna medida de la **magnitud** de la nueva actividad económica asociada con el sector 3.
+In order to quantity the impact of the entry of sector 3 in the economy, we have to use some of measure of the *magnitude* of the new economic activities associated with sector 3.
 
-En términos de IO, esto significa que debemos especificar:
+Thus for the I-O model, we specify:
 
-* El nivel de producción (producto bruto) del sector 3, :math:`x_3`, o
-* La demanda final, :math:`f_3`
+* The level of production of sector 3, :math:`x_3`, o
+* The final demand, :math:`f_3`
 
-Para el ejemplo, se define el nivel de producción de sector 3, que se denota como :math:`\bar{x}_3`.
+For this example, then the level of production of sector can be denoted as :math:`\bar{x}_3`.
 
+The new demand that results for sectors 1 and 2 from the new production of sector 3 is then :math:`a_{13}\bar{x}_3`  and :math:`a_{23}\bar{x}_3` , respectively.
 
-La nueva demanda de los sectores 1 y 2 que surge por la producción del nuevo sector 3 es :math:`a_{13}\bar{x}_3`  y :math:`a_{23}\bar{x}_3` , respectivamente.
-
-Es decir, podemos ver esas nuevas demandas como un cambio **exógeno** impuesto a los dos sectores originales;
+This means, that these new demands can be model as a **exogenous** shock to the two original sectors;
 
 .. math::
   \Delta \mathbf{f}= \begin{bmatrix}
@@ -175,8 +242,7 @@ Es decir, podemos ver esas nuevas demandas como un cambio **exógeno** impuesto 
   a_{23}\bar{x}_3
   \end{bmatrix}
 
-
-de manera que los impactos, en términos del producto de esos dos sectores, estarían dados por :math:`\Delta\mathbf{x} = \mathbf{L}\Delta \mathbf{f}`:
+Thus the impacts, in terms of the production of these two sectors, are given by :math:`\Delta\mathbf{x} = \mathbf{L}\Delta \mathbf{f}`:
 
 .. math::
   \Delta\mathbf{x}=\begin{bmatrix}
@@ -193,9 +259,8 @@ de manera que los impactos, en términos del producto de esos dos sectores, esta
   \end{bmatrix}
 
 
-
-Dado que también hay una demanda usual, independiente de la demanda del nuevo sector 3, :math:`\bar{f}_1` y :math:`\bar{f}_2`, para esos dos sectores,
-el producto bruto total en los dos sectores sería
+Since there is also a baseline demand, independent of the new demand associated with sector 3, :math:`\bar{f}_1` and :math:`\bar{f}_2`, for these two sectors
+the gross total production is given by:
 
 .. math::
   \begin{bmatrix}
@@ -215,12 +280,12 @@ el producto bruto total en los dos sectores sería
   \end{bmatrix}
 
 
-cuando :math:`\bar{f}_1 = 0` y :math:`\bar{f}_2=0`, aislamos el impacto de incoporar el nuevo sector.
+when :math:`\bar{f}_1 = 0` y :math:`\bar{f}_2=0`, we can isolate the impact of incorporating the new sector
 
-Ejemplo 1
-"""""""""""
+This logic is operationalized in the following example
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-Sea
+Be
 
 .. math::
   \mathbf{A}=\begin{bmatrix}
@@ -228,7 +293,7 @@ Sea
       0.20& 0.05
   \end{bmatrix},
 
-entonces :math:`(\mathbf{I} - \mathbf{A})^{-1}` es igual a:
+Then :math:`(\mathbf{I} - \mathbf{A})^{-1}` is equal to:
 
 .. math::
   \mathbf{A}=\begin{bmatrix}
@@ -245,14 +310,14 @@ entonces :math:`(\mathbf{I} - \mathbf{A})^{-1}` es igual a:
   L
   >> array([[1.25412541, 0.330033  ],[0.2640264 , 1.12211221]])
 
-Asumamos que las estimaciones de las estimaciones de insumos directos del sector 3 son:
+We assume that input demand for sector 3 is given by:
 
 * :math:`a_{13}=0.30`
 * :math:`a_{23} = 0.18`
 
-y que se espera que el sector 3 produzca un nivel de 100,000 por año.
+and in this example we estimate that sector 3 will produce at a level of 100,000 units per year.
 
-De manera que :math:`\bar{x}_3 = 100000`
+Such that :math:`\bar{x}_3 = 100000`
 
 .. math::
   \Delta \mathbf{f}= \begin{bmatrix}
@@ -266,7 +331,7 @@ De manera que :math:`\bar{x}_3 = 100000`
   \end{bmatrix}
 
 
-El impacto de incoporar el nuevo sector es igual a
+Then the impact of incorporating the new sector is equal to:
 
 .. math::
    \Delta \mathbf{x} = \begin{bmatrix}
@@ -281,24 +346,24 @@ El impacto de incoporar el nuevo sector es igual a
   L@delta_f
   >> array([43564.35643564, 28118.81188119])
 
-El sector 1, al satisfacer la nueva demanda de su producto por un valor de 30,000,
-finalmente tendrá que aumentar su producción en 43,560. De manera similar, las nuevas
-demandas del sector 2 del sector 3 son de 18,000, pero al final el sector 2 necesitará
-producir un total de 28,116 más de producción. Estas cifras representan una forma de
-medir el impacto en una economía que surge del movimiento de nueva actividad industrial.
+Sector 1 would have to meet the new demand level of 30,000,
+thus its production level would need to increase to 43,560. In a similar way, the new
+demand level for sector 2, derived from the introduction of sector 3, would be 18,000, but in the end sector 2
+will need to produce 28,116 units more. These impact analysis simulated the effect that the introduction of
+a new industry can have on an economy.
 
-Impactos en el empleo
+Impact on employment
 """""""""""""""""""""""
 
-Sea :math:`\mathscr{E}` el empleo total y :math:`E = [e_1,e_2,\dots,e_n]` un vector fila
-de los coeficientes de trabajo o razones empleo/producto(bruto) de cada sector, la expresión de empleo total sería:
+Let be :math:`\mathscr{E}` total employment and :math:`E = [e_1,e_2,\dots,e_n]` a row vector
+containing the job coefficients of each sector, then total employment will be estimated as:
 
 .. math::
   \begin{equation}
   \mathscr{E} = EX
   \end{equation}
 
-Suponiendo una economía con dos sectores, el **impacto** (cambio directo más el indirecto) en el empleo por el incremento exógeno en la demanda final del sector 2 sería igual a
+Considering a two sectors economy, the **impact** (direct plus indirect change) on employment will be given by the exogenous change in final demand for sector 2 is
 
 .. math::
   \Delta\mathscr{E}_{d} =
@@ -317,7 +382,7 @@ Suponiendo una economía con dos sectores, el **impacto** (cambio directo más e
   E (\mathbf{I} - \mathbf{A})^{-1} \Delta \mathbf{f}
   = E \Delta X
 
-El cambio directo en el empleo debido al incremento en la demanda es :math:`\Delta\mathscr{E}_{d'}`
+The total direct employment change resulting from the demand change is :math:`\Delta\mathscr{E}_{d'}`
 
 .. math::
   \Delta\mathscr{E}_{d'} =
@@ -333,19 +398,19 @@ El cambio directo en el empleo debido al incremento en la demanda es :math:`\Del
 
 
 
-Ejemplo 2
+Example 2
 """""""""""""
 
-Continuando con el ejemplo anterior, calculamos el impacto en el empleo debido a la incorporación del nuevo sector.
+Following the previous example, the estimated impact on employment, derived from the introduction of sector 3 is estimated as follows.
 
-Los  coeficientes de trabajo están dados por:
+The employment coefficients are given by:
 
 .. math::
   E = \begin{bmatrix}
       0.25 & 0.15\\
   \end{bmatrix}
 
-El cambio en el empleo igual al trabajo requerido por el cambio en la demanda final; es decir
+Then the change in employment to meet the final demand:
 
 .. math::
   \Delta\mathscr{E}_{d} =
@@ -371,7 +436,7 @@ El cambio en el empleo igual al trabajo requerido por el cambio en la demanda fi
   E.dot(L@delta_f)
   >> 15108.910891089108
 
-Para calcular el cambio porcentual en el empleo, tenemos que calcular :math:`X`. Suponemos que :math:`\bar{f}_1 = 120000` y :math:`\bar{f}_2=90000`.
+To estimate the percent change in employment, we need to estimate  :math:`X`. Asumming that :math:`\bar{f}_1 = 120000` and :math:`\bar{f}_2=90000`.
 Recordando la expresión para calcular :math:`X`;
 
 .. math::
