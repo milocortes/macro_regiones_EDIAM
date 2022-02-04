@@ -1,5 +1,126 @@
 include("utils-JuMP.jl")
 
+using DataFrames
+using CSV
+using Printf
+using ProgressBars
+
+# Cargamos los parámetros de las regiones
+
+path = "/home/milo/PCIC/Maestría/2doSemestre/seminario/github/data/experimental_design/"
+region_parameters = Dict(
+                            "america" => CSV.read(path*"america_experimental_design.csv",DataFrame),
+                            "eurafrica" => CSV.read(path*"eurafrica_experimental_design.csv",DataFrame),
+                            "asia_oceania" => CSV.read(path*"asia_oceania_experimental_design.csv",DataFrame)
+                        )
+policies = ["P"*string(i) for i in 0:7]
+
+resultados = []
+
+for region in ["america","eurafrica","asia_oceania"]
+    printstyled("*******************************************\n"; color = :white)
+    printstyled("*******************************************\n"; color = :white)
+    printstyled("%%%%%%%%%%%%%  "*region*"  %%%%%%%%%%%%%\n"; color = :yellow)
+    printstyled("*******************************************\n"; color = :white)
+    printstyled("*******************************************\n"; color = :white)
+    println()
+
+    for  parameter_set in ProgressBar(1:400)
+        printstyled("++++++++++++++++++++++++++++++++++++++++++\n"; color = :white)
+        printstyled("    Parameter set: "*string(parameter_set)*" .Region: "*region*" \n"; color = :yellow)
+        printstyled("++++++++++++++++++++++++++++++++++++++++++\n"; color = :white)
+        println()
+
+        for policy in policies
+            printstyled("-------------------------------------------\n"; color = :white)
+            printstyled("    Policy "*policy*" \n"; color = :yellow)
+            printstyled("------------------------------------------\n"; color = :white)
+
+            #Load parameters required for determining initial conditions
+            ε = region_parameters[region].epsilon[parameter_set]
+            α = region_parameters[region].alfa[parameter_set]
+            size_factor = region_parameters[region].size_factor[parameter_set]
+            γ_re = region_parameters[region].Gamma_re[parameter_set]
+            k_re = region_parameters[region].k_re[parameter_set]
+            γ_ce = region_parameters[region].Gamma_ce[parameter_set]
+            k_ce = region_parameters[region].k_ce[parameter_set]
+            η_re= region_parameters[region].Eta_re[parameter_set]
+            η_ce= region_parameters[region].Eta_ce[parameter_set]
+            ν_re = region_parameters[region].Nu_re[parameter_set]
+            ν_ce= region_parameters[region].Nu_ce[parameter_set]
+            qsi = region_parameters[region].qsi[parameter_set]
+            δ_S = region_parameters[region].δ_S[parameter_set]
+            Δ_T_Disaster = 5
+            β_T = region_parameters[region].β_T[parameter_set]
+            CO2_base = region_parameters[region].CO2_base[parameter_set]
+            CO2_Disaster = region_parameters[region].CO2_Disaster[parameter_set]
+            labor_growth_N = region_parameters[region].labor_growth_N[parameter_set]
+            labor_growth_S = region_parameters[region].labor_growth_S[parameter_set]
+            ρ = region_parameters[region].rho[parameter_set]
+            λ = region_parameters[region].lambda_S[parameter_set]
+            σ = region_parameters[region].sigma_utility[parameter_set]
+
+            ## Y renewable energy, advanced economies
+            Yre_N_0 = region_parameters[region].Yre_N_0[parameter_set]
+            ## Y carbon energy, advanced economies
+            Yce_N_0 = region_parameters[region].Yce_N_0[parameter_set]
+            ## Y renewable energy, emerging economies
+            Yre_S_0 = region_parameters[region].Yre_S_0[parameter_set]
+            ## Y carbon energy, emerging economies
+            Yce_S_0 = region_parameters[region].Yce_S_0[parameter_set]
+            ### Environment quality
+            S_0 = region_parameters[region].S_0[parameter_set]
+
+            #Initial Productivity conditions are determined by the initial levels of production of energy
+            #In the Northern Region
+            global Ace_N_0 = ((Yce_N_0^((ε-1)/ε)+Yre_N_0^((ε-1)/ε))^(ε/(ε-1)))*(1+(Yce_N_0/Yre_N_0)^((1-ε)/ε))^(1/((1-α)*(1-ε)))
+            global Are_N_0 = ((Yce_N_0^((ε-1)/ε)+Yre_N_0^((ε-1)/ε))^(ε/(ε-1)))*(1+(Yre_N_0/Yce_N_0)^((1-ε)/ε))^(1/((1-α)*(1-ε)))
+
+            #In the Southern Region
+            global Ace_S_0 = (1/size_factor)*((Yce_S_0^((ε-1)/ε)+Yre_S_0^((ε-1)/ε))^(ε/(ε-1)))*(1+(Yce_S_0/Yre_S_0)^((1-ε)/ε))^(1/((1-α)*(1-ε)))
+            global Are_S_0 = (1/size_factor)*((Yce_S_0^((ε-1)/ε)+Yre_S_0^((ε-1)/ε))^(ε/(ε-1)))*(1+(Yre_S_0/Yce_S_0)^((1-ε)/ε))^(1/((1-α)*(1-ε)))
+
+            # Save de initial state variable in an array
+            global u0= [Are_N_0, Ace_N_0, Are_S_0,Ace_S_0,S_0]
+
+            # Save parameters in an array
+            global dt = 5    # 1 Quarterly
+            global D = 120.0 # Simulate for 30 years
+
+            model = Model()
+
+            try
+                model = optimize_model(model,policy);
+
+                solutions = solution_summary(model, verbose=true)
+
+                ce_tax_S = solutions.primal_solution["ce_tax_S"]
+                ce_tax_N = solutions.primal_solution["ce_tax_N"]
+                Tec_subsidy_N = solutions.primal_solution["Tec_subsidy_N"]
+                RD_subsidy_N = solutions.primal_solution["RD_subsidy_N"]
+                Tec_subsidy_S = solutions.primal_solution["Tec_subsidy_S"]
+                RD_subsidy_S = solutions.primal_solution["RD_subsidy_S"]
+                Tec_subsidy_GF_N = solutions.primal_solution["Tec_subsidy_GF_N"]
+                RD_subsidy_GF_N = solutions.primal_solution["RD_subsidy_GF_N"]
+
+                optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N)
+
+                # Verificamos si el incremento de la temperatura sobre pasa los tres grados centígrados
+                println(any(r_Delta_Temp .> 2.0))
+                println(!any(r_Delta_Temp .> 2.0))
+                println(sum(r_Delta_Temp))
+                push!(resultados,!any(r_Delta_Temp .> 2.0))
+            catch
+                printstyled("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"; color = :red)
+                printstyled("    ERROR \n"; color = :red)
+                printstyled("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"; color = :red)
+                push!(resultados,"RNF")
+
+            end
+        end
+    end
+end
+
 #Load parameters required for determining initial conditions
 ε = 3
 α = 0.33
@@ -54,3 +175,19 @@ global D = 120.0 # Simulate for 30 years
 model = Model()
 model = optimize_model(model,"P2")
 solution_summary(model, verbose=true)
+
+solutions = solution_summary(model, verbose=true)
+
+ce_tax_S = solutions.primal_solution["ce_tax_S"]
+ce_tax_N = solutions.primal_solution["ce_tax_N"]
+Tec_subsidy_N = solutions.primal_solution["Tec_subsidy_N"]
+RD_subsidy_N = solutions.primal_solution["RD_subsidy_N"]
+Tec_subsidy_S = solutions.primal_solution["Tec_subsidy_S"]
+RD_subsidy_S = solutions.primal_solution["RD_subsidy_S"]
+Tec_subsidy_GF_N = solutions.primal_solution["Tec_subsidy_GF_N"]
+RD_subsidy_GF_N = solutions.primal_solution["RD_subsidy_GF_N"]
+
+optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N)
+sum(r_Delta_Temp)
+# Verificamos si el incremento de la temperatura sobre pasa los tres grados centígrados
+any(r_Delta_Temp .> 3.0)

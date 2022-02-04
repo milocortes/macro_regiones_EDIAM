@@ -219,7 +219,8 @@ function optimize_model(model,policy_regimen)
         register(model, :optim_welfare, 8, optim_welfare, autodiff=true)
         @NLobjective(model, Max, optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N))
         set_optimizer(model, Ipopt.Optimizer)
-        optimize!(model)
+        set_silent(model)
+        optimize!(model);
 
         return model
 
@@ -256,7 +257,8 @@ function optimize_model(model,policy_regimen)
         register(model, :optim_welfare, 8, optim_welfare, autodiff=true)
         @NLobjective(model, Max, optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N))
         set_optimizer(model, Ipopt.Optimizer)
-        optimize!(model)
+        set_silent(model)
+        optimize!(model);
 
         return model
 
@@ -294,7 +296,8 @@ function optimize_model(model,policy_regimen)
         register(model, :optim_welfare, 8, optim_welfare, autodiff=true)
         @NLobjective(model, Max, optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N))
         set_optimizer(model, Ipopt.Optimizer)
-        optimize!(model)
+        set_silent(model)
+        optimize!(model);
 
         return model
 
@@ -335,7 +338,8 @@ function optimize_model(model,policy_regimen)
         register(model, :optim_welfare, 8, optim_welfare, autodiff=true)
         @NLobjective(model, Max, optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N))
         set_optimizer(model, Ipopt.Optimizer)
-        optimize!(model)
+        set_silent(model)
+        optimize!(model);
 
         return model
 
@@ -347,35 +351,12 @@ function optimize_model(model,policy_regimen)
             hᴱ = hᴳ > 0
             qᴳ = 0
         =#
-    elseif policy_regimen=="P5"
-        #= Harmonized Carbon Tax [Both] + Cooperative R&D[GCF]- Independent Technology[AR]
-            * No technology subsidies in emerging region
-            τᴬ = τᴱ > 0
-            hᴬ , qᴬ > 0
-            hᴱ = hᴳ = 0
-            qᴱ = qᴳ > 0
-        =#
-    elseif policy_regimen=="P6"
-        #= Harmonized Carbon Tax [Both] + Cooperative R&D[GCF]- Independent Technology[Both]
-            * Independent technology subsidies in emerging region
-            τᴬ = τᴱ > 0
-            hᴬ , hᴱ , qᴬ > 0
-            qᴱ = qᴳ > 0
-            hᴳ = 0
-        =#
-    elseif policy_regimen=="P7"
-        #= Harmonized Carbon Tax  +  Cooperative Technology - R&D[GCF]
-            * Independent technology subsidies in emerging region
-            τᴬ = τᴱ > 0
-            hᴬ , qᴬ > 0
-            qᴱ = qᴳ > 0
-            hᴱ = hᴳ > 0
-        =#
+
         @variable(model,ce_tax_N)
         @NLconstraint(model, 0.1 <= ce_tax_N)
 
         @variable(model,ce_tax_S)
-        @NLconstraint(model, 0.1 <= ce_tax_S )
+        @NLconstraint(model, ce_tax_N == ce_tax_S )
 
         @variable(model,Tec_subsidy_N)
         @NLconstraint(model, 0.1 <= Tec_subsidy_N )
@@ -389,11 +370,144 @@ function optimize_model(model,policy_regimen)
         @variable(model,RD_subsidy_S)
         @NLconstraint(model, 0.1 <= RD_subsidy_S )
 
+        @variable(model,Tec_subsidy_GF_N)
+        @NLconstraint(model, Tec_subsidy_GF_N == Tec_subsidy_S )
 
-        register(model, :optim_welfare, 6, optim_welfare, autodiff=true)
-        @NLobjective(model, Max, optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S))
+        @variable(model,RD_subsidy_GF_N)
+        @NLconstraint(model, RD_subsidy_GF_N == 0 )
+
+
+        register(model, :optim_welfare, 8, optim_welfare, autodiff=true)
+        @NLobjective(model, Max, optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N))
         set_optimizer(model, Ipopt.Optimizer)
-        optimize!(model)
+        set_silent(model)
+        optimize!(model);
+
+        return model
+
+    elseif policy_regimen=="P5"
+        #= Harmonized Carbon Tax [Both] + Cooperative R&D[GCF]- Independent Technology[AR]
+            * No technology subsidies in emerging region
+            τᴬ = τᴱ > 0
+            hᴬ , qᴬ > 0
+            hᴱ = hᴳ = 0
+            qᴱ = qᴳ > 0
+        =#
+
+        @variable(model,ce_tax_N)
+        @NLconstraint(model, 0.1 <= ce_tax_N)
+
+        @variable(model,ce_tax_S)
+        @NLconstraint(model, ce_tax_N == ce_tax_S )
+
+        @variable(model,Tec_subsidy_N)
+        @NLconstraint(model, 0.1 <= Tec_subsidy_N )
+
+        @variable(model,Tec_subsidy_S)
+        @NLconstraint(model, 0.1 <= Tec_subsidy_S)
+
+        @variable(model,RD_subsidy_N)
+        @NLconstraint(model, 0.1 <= RD_subsidy_N )
+
+        @variable(model,RD_subsidy_S)
+        @NLconstraint(model, 0.1 <= RD_subsidy_S )
+
+        @variable(model,Tec_subsidy_GF_N)
+        @NLconstraint(model, Tec_subsidy_GF_N == Tec_subsidy_S )
+
+        @variable(model,RD_subsidy_GF_N)
+        @NLconstraint(model, RD_subsidy_GF_N == RD_subsidy_S )
+
+
+        register(model, :optim_welfare, 8, optim_welfare, autodiff=true)
+        @NLobjective(model, Max, optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N))
+        set_optimizer(model, Ipopt.Optimizer)
+        set_silent(model)
+        optimize!(model);
+
+        return model
+
+    elseif policy_regimen=="P6"
+        #= Harmonized Carbon Tax [Both] + Cooperative R&D[GCF]- Independent Technology[Both]
+            * Independent technology subsidies in emerging region
+            τᴬ = τᴱ > 0
+            hᴬ , hᴱ , qᴬ > 0
+            qᴱ = qᴳ > 0
+            hᴳ = 0
+        =#
+
+        @variable(model,ce_tax_N)
+        @NLconstraint(model, 0.1 <= ce_tax_N)
+
+        @variable(model,ce_tax_S)
+        @NLconstraint(model, ce_tax_N == ce_tax_S )
+
+        @variable(model,Tec_subsidy_N)
+        @NLconstraint(model, 0.1 <= Tec_subsidy_N )
+
+        @variable(model,Tec_subsidy_S)
+        @NLconstraint(model, 0.1 <= Tec_subsidy_S)
+
+        @variable(model,RD_subsidy_N)
+        @NLconstraint(model, 0.1 <= RD_subsidy_N )
+
+        @variable(model,RD_subsidy_S)
+        @NLconstraint(model, 0.1 <= RD_subsidy_S )
+
+        @variable(model,Tec_subsidy_GF_N)
+        @NLconstraint(model, Tec_subsidy_GF_N == 0 )
+
+        @variable(model,RD_subsidy_GF_N)
+        @NLconstraint(model, RD_subsidy_GF_N == RD_subsidy_S )
+
+
+        register(model, :optim_welfare, 8, optim_welfare, autodiff=true)
+        @NLobjective(model, Max, optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N))
+        set_optimizer(model, Ipopt.Optimizer)
+        set_silent(model)
+        optimize!(model);
+
+        return model
+
+    elseif policy_regimen=="P7"
+        #= Harmonized Carbon Tax  +  Cooperative Technology - R&D[GCF]
+            * Independent technology subsidies in emerging region
+            τᴬ = τᴱ > 0
+            hᴬ , qᴬ > 0
+            qᴱ = qᴳ > 0
+            hᴱ = hᴳ > 0
+        =#
+
+        @variable(model,ce_tax_N)
+        @NLconstraint(model, 0.1 <= ce_tax_N)
+
+        @variable(model,ce_tax_S)
+        @NLconstraint(model, ce_tax_N == ce_tax_S )
+
+        @variable(model,Tec_subsidy_N)
+        @NLconstraint(model, 0.1 <= Tec_subsidy_N )
+
+        @variable(model,Tec_subsidy_S)
+        @NLconstraint(model, 0.1 <= Tec_subsidy_S)
+
+        @variable(model,RD_subsidy_N)
+        @NLconstraint(model, 0.1 <= RD_subsidy_N )
+
+        @variable(model,RD_subsidy_S)
+        @NLconstraint(model, 0.1 <= RD_subsidy_S )
+
+        @variable(model,Tec_subsidy_GF_N)
+        @NLconstraint(model, Tec_subsidy_GF_N == Tec_subsidy_S )
+
+        @variable(model,RD_subsidy_GF_N)
+        @NLconstraint(model, RD_subsidy_GF_N == RD_subsidy_S )
+
+
+        register(model, :optim_welfare, 8, optim_welfare, autodiff=true)
+        @NLobjective(model, Max, optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N))
+        set_optimizer(model, Ipopt.Optimizer)
+        set_silent(model)
+        optimize!(model);
 
         return model
 
