@@ -3,6 +3,8 @@ import pandas as pd
 import re
 import glob
 import os
+from termcolor import colored
+
 
 # Cambiamos de directorio
 os.chdir("../../data/cmip6")
@@ -34,7 +36,6 @@ for gcm in gcms:
     for rcp in rcps:
         for var in var_cmip:
             # Agrupamos los NetCFD individuales
-            try:
                 print("Abriendo los nc historicos de la variable climática \nRCP: {}--- Clim Var: {}/*.nc".format(rcp,var))
                 historical = xr.open_mfdataset("{}/{}/{}/*.nc".format(gcm_path,"historical",var))
                 historical_xr_var = historical[var].groupby('time.year').mean()
@@ -50,33 +51,24 @@ for gcm in gcms:
                 for region in macroregiones:
                     print("Region : {}".format(region))
                     if var == 'tas':
-                        historical_rcp_xr_sub = historical_rcp_xr.isel(year=slice(0,240))
-                        historical_rcp_xr_sub_c = historical_rcp_xr_sub[var] - 273.15
-                        del historical_rcp_xr_sub
-                        # Calculamos las anomalías
-                        if region == "america":
-                            historical_rcp_mean_values = historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >190) & (historical_rcp_xr_sub_c.lon <340)).mean(dim=("lat","lon")).values - historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >190) & (historical_rcp_xr_sub_c.lon <340)).mean(dim=("lat","lon","year")).values
-                            anios = historical_rcp_xr_sub[var].year.values
-                        elif region == "eurafrica":
-                            historical_rcp_mean_values = historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >330) | (historical_rcp_xr_sub_c.lon <60)).mean(dim=("lat","lon")).values - historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >330) | (historical_rcp_xr_sub_c.lon <60)).mean(dim=("lat","lon","year")).values
-                            anios = historical_rcp_xr_sub[var].year.values
-                        else:
-                            historical_rcp_mean_values = historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >60) & (historical_rcp_xr_sub_c.lon <190)).mean(dim=("lat","lon")).values - historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >60) & (historical_rcp_xr_sub_c.lon <190)).mean(dim=("lat","lon","year")).values
-                            anios = historical_rcp_xr_sub[var].year.values
-                    elif var =="co2":
-                        if region=="america":
-                            historical_rcp_mean_values = historical_rcp_xr[var].where( (historical_rcp_xr_sub_c.lon >190) & (historical_rcp_xr_sub_c.lon <340)).mean(dim=("plev","lat","lon")).values
-                            anios = historical_rcp_xr[var].year.values
-                            historical_rcp_mean_values = [v*1000000 for v in historical_rcp_mean_values]
-                        elif region =="eurafrica":
-                            historical_rcp_mean_values = historical_rcp_xr[var].where( (historical_rcp_xr.lon >330) | (historical_rcp_xr.lon <60)).mean(dim=("plev","lat","lon")).values
-                            anios = historical_rcp_xr[var].year.values
-                            historical_rcp_mean_values = [v*1000000 for v in historical_rcp_mean_values]
-                        else:
-                            historical_rcp_mean_values = historical_rcp_xr[var].where( (historical_rcp_xr.lon >60) & (historical_rcp_xr.lon <190)).mean(dim=("plev","lat","lon")).values
-                            anios = historical_rcp_xr[var].year.values
-                            historical_rcp_mean_values = [v*1000000 for v in historical_rcp_mean_values]
-
+                        try:
+                            #historical_rcp_xr_sub = historical_rcp_xr.isel(year=slice(0,240))
+                            historical_rcp_xr_sub_c = historical_rcp_xr[var] - 273.15
+                            # Calculamos las anomalías
+                            if region == "america":
+                                historical_rcp_mean_values = historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >190) & (historical_rcp_xr_sub_c.lon <340)).mean(dim=("lat","lon")).values - historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >190) & (historical_rcp_xr_sub_c.lon <340)).mean(dim=("lat","lon","year")).values
+                                anios = historical_rcp_xr[var].year.values
+                                print(colored("*******    No problema en tas   *******", 'yellow'))
+                            elif region == "eurafrica":
+                                historical_rcp_mean_values = historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >330) | (historical_rcp_xr_sub_c.lon <60)).mean(dim=("lat","lon")).values - historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >330) | (historical_rcp_xr_sub_c.lon <60)).mean(dim=("lat","lon","year")).values
+                                anios = historical_rcp_xr[var].year.values
+                                print(colored("*******    No problema en tas   *******", 'yellow'))
+                            else:
+                                historical_rcp_mean_values = historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >60) & (historical_rcp_xr_sub_c.lon <190)).mean(dim=("lat","lon")).values - historical_rcp_xr_sub_c.where( (historical_rcp_xr_sub_c.lon >60) & (historical_rcp_xr_sub_c.lon <190)).mean(dim=("lat","lon","year")).values
+                                anios = historical_rcp_xr[var].year.values
+                                print(colored("*******    No problema en tas   *******", 'yellow'))
+                        except:
+                            print(colored("*******    Falló en tas   *******", 'red'))
                     else:
                         historical_rcp_mean_values = historical_rcp_xr[var].values
                         anios = historical_rcp_xr[var].year.values
@@ -91,8 +83,6 @@ for gcm in gcms:
 
                     agrupa_todo = pd.concat([agrupa_todo,agrupa_rcp])
 
-            except:
-                print("No hay archivos NetCFD en el directorio")
 
     os.chdir("..")
 agrupa_todo.to_csv("gcm_year_cmip6.csv",index=False)
