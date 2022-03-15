@@ -4,6 +4,7 @@ using DataFrames
 using CSV
 using Printf
 using ProgressBars
+using EmojiSymbols
 
 # Cargamos los parámetros de las regiones
 
@@ -28,6 +29,7 @@ policies = ["P"*string(i) for i in 0:7]
 gcms = ["CESM2" ,"GFDL"]
 
 resultados = []
+
 for gcm in gcms
 
     for region in ["america","eurafrica","asia_oceania"]
@@ -38,9 +40,9 @@ for gcm in gcms
         printstyled("*******************************************\n"; color = :white)
         println()
 
-        for  parameter_set in ProgressBar(1:400)
+        for  parameter_set in 1:400
             printstyled("++++++++++++++++++++++++++++++++++++++++++\n"; color = :white)
-            printstyled("    Parameter set: "*string(parameter_set)*" .Region: "*region*" \n"; color = :yellow)
+            printstyled("    Parameter set: "*string(parameter_set)*" .Region: "*region*". GCM: "*gcm*" \n"; color = :yellow)
             printstyled("++++++++++++++++++++++++++++++++++++++++++\n"; color = :white)
             println()
 
@@ -119,10 +121,16 @@ for gcm in gcms
                     optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N)
 
                     # Verificamos si el incremento de la temperatura sobre pasa los tres grados centígrados
-                    println(any(r_Delta_Temp .> 2.0))
-                    println(!any(r_Delta_Temp .> 2.0))
-                    println(sum(r_Delta_Temp))
+                    cumple_meta = !any(r_Delta_Temp .> 2.0)
                     push!(resultados,!any(r_Delta_Temp .> 2.0))
+
+                    if cumple_meta==false
+                        printstyled("No cumple la meta\n"; color = :yellow)
+                        println("🥺🥺🥺🥺🥺🥺")
+                    else
+                        printstyled("Cumple la meta!!\n"; color = :blue)
+                        println("🥳🥳🥳🥳🥳🥳")
+                    end
                 catch
                     printstyled("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"; color = :red)
                     printstyled("    ERROR \n"; color = :red)
