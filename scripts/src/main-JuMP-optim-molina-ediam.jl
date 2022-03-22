@@ -5,6 +5,7 @@ using CSV
 using Printf
 using ProgressBars
 using EmojiSymbols
+using DataFrames
 
 # Cargamos los parámetros de las regiones
 
@@ -28,7 +29,13 @@ policies = ["P"*string(i) for i in 0:7]
 
 gcms = ["CESM2" ,"GFDL"]
 
-resultados = []
+# Define list to save results
+resultados_2_c = []
+resultados_3_c = []
+gcm_list = []
+region_list = []
+parameter_set_list = []
+policy_list = []
 
 for gcm in gcms
 
@@ -50,6 +57,11 @@ for gcm in gcms
                 printstyled("-------------------------------------------\n"; color = :white)
                 printstyled("    Policy "*policy*" \n"; color = :yellow)
                 printstyled("------------------------------------------\n"; color = :white)
+
+                push!(gcm_list,gcm)
+                push!(region_list,region)
+                push!(parameter_set_list,parameter_set)
+                push!(policy_list,policy)
 
                 #Load parameters required for determining initial conditions
                 ε = region_parameters[gcm][region].epsilon[parameter_set]
@@ -120,28 +132,47 @@ for gcm in gcms
 
                     optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N)
 
-                    # Verificamos si el incremento de la temperatura sobre pasa los tres grados centígrados
-                    cumple_meta = !any(r_Delta_Temp .> 2.0)
-                    push!(resultados,!any(r_Delta_Temp .> 2.0))
+                    # Verificamos si el incremento de la temperatura sobre pasa los 2 grados centígrados
+                    cumple_meta_2_c = !any(r_Delta_Temp .> 2.0)
+                    push!(resultados_2_c,!any(r_Delta_Temp .> 2.0))
+                    # Verificamos si el incremento de la temperatura sobre pasa los 3 grados centígrados
+                    cumple_meta_3_c = !any(r_Delta_Temp .> 3.0)
+                    push!(resultados_3_c,!any(r_Delta_Temp .> 3.0))
 
-                    if cumple_meta==false
-                        printstyled("No cumple la meta\n"; color = :yellow)
+                    if cumple_meta_2_c==false
+                        printstyled("No cumple la meta de Δ°C < 2°C\n"; color = :yellow)
                         println("🥺🥺🥺🥺🥺🥺")
                     else
-                        printstyled("Cumple la meta!!\n"; color = :blue)
+                        printstyled("Cumple la meta de Δ°C < 2°C\n!!\n"; color = :blue)
                         println("🥳🥳🥳🥳🥳🥳")
                     end
+
+                    if cumple_meta_3_c==false
+                        printstyled("No cumple la meta de Δ°C < 3°C\n"; color = :yellow)
+                        println("🥺🥺🥺🥺🥺🥺")
+                    else
+                        printstyled("Cumple la meta de Δ°C < 3°C\n!!\n"; color = :blue)
+                        println("🥳🥳🥳🥳🥳🥳")
+                    end
+
                 catch
                     printstyled("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"; color = :red)
                     printstyled("    ERROR \n"; color = :red)
                     printstyled("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"; color = :red)
-                    push!(resultados,"RNF")
-
+                    push!(resultados_2_c,"RNF")
+                    push!(resultados_3_c,"RNF")
                 end
             end
         end
     end
 end
+
+# Save the results as DataFrame
+df = DataFrame(resultados_2_c = resultados_2_c,resultados_3_c = resultados_3_c, gcm = gcm_list ,region = region_list , parameter_set = parameter_set_list, policy  = policy_list )
+
+# Write DataFrame out to CSV file
+CSV.write(path*"ediam_regions_results.csv", df)
+
 #Load parameters required for determining initial conditions
 ε = 3
 α = 0.33
