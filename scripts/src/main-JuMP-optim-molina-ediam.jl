@@ -37,6 +37,15 @@ region_list = []
 parameter_set_list = []
 policy_list = []
 
+ce_tax_S_list = []
+ce_tax_N_list = []
+Tec_subsidy_N_list = []
+RD_subsidy_N_list = []
+Tec_subsidy_S_list = []
+RD_subsidy_S_list = []
+Tec_subsidy_GF_N_list = []
+RD_subsidy_GF_N_list = []
+
 for gcm in gcms
 
     for region in ["america","eurafrica","asia_oceania"]
@@ -130,6 +139,15 @@ for gcm in gcms
                     Tec_subsidy_GF_N = solutions.primal_solution["Tec_subsidy_GF_N"]
                     RD_subsidy_GF_N = solutions.primal_solution["RD_subsidy_GF_N"]
 
+                    push!(ce_tax_S_list,ce_tax_S)
+                    push!(ce_tax_N_list,ce_tax_N)
+                    push!(Tec_subsidy_N_list,Tec_subsidy_N)
+                    push!(RD_subsidy_N_list,RD_subsidy_N)
+                    push!(Tec_subsidy_S_list,Tec_subsidy_S)
+                    push!(RD_subsidy_S_list,RD_subsidy_S)
+                    push!(Tec_subsidy_GF_N_list,Tec_subsidy_GF_N)
+                    push!(RD_subsidy_GF_N_list,RD_subsidy_GF_N)
+
                     optim_welfare(ce_tax_S,ce_tax_N,Tec_subsidy_N,RD_subsidy_N,Tec_subsidy_S,RD_subsidy_S,Tec_subsidy_GF_N,RD_subsidy_GF_N)
 
                     # Verificamos si el incremento de la temperatura sobre pasa los 2 grados centígrados
@@ -168,12 +186,22 @@ for gcm in gcms
 end
 
 # Save the results as DataFrame
-df = DataFrame(resultados_2_c = resultados_2_c,resultados_3_c = resultados_3_c, gcm = gcm_list ,region = region_list , parameter_set = parameter_set_list, policy  = policy_list )
+df = DataFrame(resultados_2_c = resultados_2_c,resultados_3_c = resultados_3_c, gcm = gcm_list ,region = region_list , parameter_set = parameter_set_list, policy  = policy_list. ce_tax_S = ce_tax_S_list,
+ce_tax_N = ce_tax_N_list,
+Tec_subsidy_N = Tec_subsidy_N_list,
+RD_subsidy_N = RD_subsidy_N_list,
+Tec_subsidy_S = Tec_subsidy_S_list,
+RD_subsidy_S = RD_subsidy_S_list,
+Tec_subsidy_GF_N = Tec_subsidy_GF_N_list,
+RD_subsidy_GF_N = RD_subsidy_GF_N_list)
 
 # Write DataFrame out to CSV file
 CSV.write(path*"ediam_regions_results.csv", df)
 
 #Load parameters required for determining initial conditions
+gcm = "CESM2"
+region = "eurafrica"
+parameter_set = 300
 ε = 3
 α = 0.33
 size_factor = 4
@@ -185,12 +213,18 @@ k_ce = 0
 η_ce= 0.02
 ν_re = 0.02
 ν_ce= 0.02
-qsi = 0.010054
-δ_S = 0.001823
-Δ_T_Disaster= 6
-β_T = 4.997053
-CO2_base = 289.415046
-CO2_Disaster= 1298.216153
+#qsi = 0.010054
+#δ_S = 0.001823
+#Δ_T_Disaster= 6
+#β_T = 4.997053
+#CO2_base = 289.415046
+#CO2_Disaster= 1298.216153
+qsi = region_parameters[gcm][region].qsi[parameter_set]
+δ_S = region_parameters[gcm][region].δ_S[parameter_set]
+Δ_T_Disaster = 6
+β_T = region_parameters[gcm][region].β_T[parameter_set]
+CO2_base = region_parameters[gcm][region].CO2_base[parameter_set]
+CO2_Disaster = region_parameters[gcm][region].CO2_Disaster[parameter_set]
 labor_growth_N = 0.000
 labor_growth_S = 0.000
 ρ = 0.015
@@ -198,15 +232,26 @@ labor_growth_S = 0.000
 σ = 2
 
 ## Y renewable energy, advanced economies
-Yre_N_0 = 45.55074
+Yre_N_0 = region_parameters[gcm][region].Yre_N_0[parameter_set]
 ## Y carbon energy, advanced economies
-Yce_N_0 = 193.2
+Yce_N_0 = region_parameters[gcm][region].Yce_N_0[parameter_set]
 ## Y renewable energy, emerging economies
-Yre_S_0 = 27.82166
+Yre_S_0 = region_parameters[gcm][region].Yre_S_0[parameter_set]
 ## Y carbon energy, emerging economies
-Yce_S_0 = 257.5463
+Yce_S_0 = region_parameters[gcm][region].Yce_S_0[parameter_set]
 ### Environment quality
-S_0 = 915.970085
+S_0 = region_parameters[gcm][region].S_0[parameter_set]
+
+## Y renewable energy, advanced economies
+#Yre_N_0 = 45.55074
+## Y carbon energy, advanced economies
+#Yce_N_0 = 193.2
+## Y renewable energy, emerging economies
+#Yre_S_0 = 27.82166
+## Y carbon energy, emerging economies
+#Yce_S_0 = 257.5463
+### Environment quality
+#S_0 = 915.970085
 
 #Initial Productivity conditions are determined by the initial levels of production of energy
 #In the Northern Region
